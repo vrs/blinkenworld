@@ -12,17 +12,11 @@ body {
 	text-align: center;
 }
 
-#canvas-container {
-	position: relative;
-	display: inline-block;
-	margin: 3em auto;
-	border: 1px solid #aaa;
-}
-#canvas-container img {
+img {
 	display: block;
 }
-#canvas-container canvas {
-	position: absolute;
-	top: 0;
-	left: 0;
+
+canvas {
+	position: relative;
+	top: -506px;
 }
