@@ -1,48 +1,60 @@
-document.addEventListener('DOMContentLoaded',function(){
-	var canvas = document.getElementById('vis'),
-	ctx = canvas.getContext('2d'),
+var debug = true, log;
+if (typeof console !== 'undefined' && debug)
+	log = console.log;
+else
+	log = function () {};
 
-	processPosts = (function () {
-		console.log("processing...");
-		console.log(arguments);
-		return "done";
-		//bla...
-	}).then(animatePosts).twice();
-	
-	function prepareCanvas(loadEvent) {
+document.addEventListener('DOMContentLoaded',function(){
+	var intervalMs = 50,
+	secondsPerInterval = 60,
+
+	prepareCanvas = function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
 		canvas.height = background.height;
-	}
-
-	function animatePosts(data) {
-		console.log("animating...");
+	},
+	processPosts = (function processPosts(response) {
+		if (response.status !== 200 && response.status !== 304) {
+			log("oops, HTTP " + response.status);
+			return
+		} else {
+			log("found, HTTP " + response.status)
+		}
+		return JSON.parse(response.text)
+	})
+	.then(function animatePosts(data) {
+		log("animating...");
+		var width = canvas.width,
+		height = canvas.height;
+		
 		ctx.fillStyle = '#FFFFFF';
-		animatePost(500, 250);
-		animatePost(300, 250);
-		animatePost(400, 200);
-		animatePost(200, 400);
+		data.posts.forEach(function(post){
+			animatePost(
+				(180+post.longitude)%360*width/360,
+				(90-post.latitude)*height/180);
+		});
 		// animationQueue
 		// zeittabelle
 		// tabelle durchlaufen (setInterval), an animationQueue anhängen
 		// gleichzeitig animationQueue abarbeiten, setTimeout
 		// oder einfach losanimieren
-	}
-
-	function animatePost(longitudepx, latitudepx) {
-		console.log("paiting...");
+	})
+	.twice(),
+	animatePost = function animatePost(longitudepx, latitudepx) {
 		ctx.beginPath();
 		ctx.arc(longitudepx, latitudepx, 10, 0, Math.PI*2, true); 
 		ctx.closePath();
 		ctx.fill();
-		// paint pixel
 		// fade out
 		// destroy
-	}
+	},
+	
+	canvas = document.getElementById('vis'),
+	ctx = canvas.getContext('2d');
 
 	// go
 	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
-	load('postdata.json').then(processPosts).run();
+	load(debug ? 'postdata-sample.json' : 'postdata.json').then(processPosts).run();
 	// then(reset)?
 }, false);
 
@@ -64,7 +76,7 @@ function load(path) {
 		req.onreadystatechange = function () {
 			if (req.readyState === 4) {
 				callback({
-					responseText: req.responseText,
+					text: req.responseText,
 					status: req.status
 				})
 			}
