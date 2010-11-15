@@ -7,17 +7,21 @@ document.addEventListener('DOMContentLoaded',function(){
 		console.log(arguments);
 		return "done";
 		//bla...
-	}).twice()
-	.then(animatePosts);
+	}).then(animatePosts).twice();
 	
-	function drawMap(loadEvent) {
+	function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
 		canvas.height = background.height;
-		ctx.drawImage(background, 0, 0);
 	}
 
 	function animatePosts(data) {
+		console.log("animating...");
+		ctx.fillStyle = '#FFFFFF';
+		animatePost(500, 250);
+		animatePost(300, 250);
+		animatePost(400, 200);
+		animatePost(200, 400);
 		// animationQueue
 		// zeittabelle
 		// tabelle durchlaufen (setInterval), an animationQueue anhängen
@@ -25,14 +29,19 @@ document.addEventListener('DOMContentLoaded',function(){
 		// oder einfach losanimieren
 	}
 
-	function animatePost(latitude, longitude) {
+	function animatePost(longitudepx, latitudepx) {
+		console.log("paiting...");
+		ctx.beginPath();
+		ctx.arc(longitudepx, latitudepx, 10, 0, Math.PI*2, true); 
+		ctx.closePath();
+		ctx.fill();
 		// paint pixel
 		// fade out
 		// destroy
 	}
 
 	// go
-	load('worldmap.png').then(drawMap).then(processPosts).run();
+	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
 	load('postdata.json').then(processPosts).run();
 	// then(reset)?
 }, false);
@@ -93,8 +102,10 @@ Function.prototype.twice = function () {
 	args = [],
 	f = this;
 	return function() {
-		args = Array.prototype.concat.apply(args, arguments)
-			.filter(function (x) { return typeof x !== 'undefined'}); // accumulate the arguments
+		// accumulate the arguments
+		args = Array.prototype.concat.apply(args, arguments).filter(function (x) {
+				return typeof x !== 'undefined'
+		});
 		if (++alreadycalled < 2) return;
 		else return f.apply(f, args);
 	}
