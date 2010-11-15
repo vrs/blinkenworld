@@ -1,6 +1,6 @@
 var debug = true, log;
 if (typeof console !== 'undefined' && debug)
-	log = console.log;
+	log = (function (x) {console.log(x)});
 else
 	log = function () {};
 
