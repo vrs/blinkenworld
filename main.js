@@ -7,6 +7,7 @@ else
 document.addEventListener('DOMContentLoaded',function(){
 	var intervalMs = 50,
 	secondsPerInterval = 60,
+	dotSize = 20,
 
 	prepareCanvas = function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
@@ -42,7 +43,7 @@ document.addEventListener('DOMContentLoaded',function(){
 	.twice(),
 	animatePost = function animatePost(longitudepx, latitudepx) {
 		ctx.beginPath();
-		ctx.arc(longitudepx, latitudepx, 10, 0, Math.PI*2, true); 
+		ctx.arc(longitudepx, latitudepx, dotSize/2, 0, Math.PI*2, true); 
 		ctx.closePath();
 		ctx.fill();
 		// fade out
