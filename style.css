@@ -1,22 +1,10 @@
-html, body {
-	margin: 0;
-	padding: 0;
-	font-size: 12px;
-}
-html {
-	font-family: monospace;
-}
 body {
-	padding: 0 1em;
-	position: relative;
-	text-align: center;
+    padding: 1em;
+    text-align: center;
 }
 
-img {
-	display: block;
-}
-
-canvas {
-	position: relative;
-	top: -506px;
+#map {
+    border: 1px solid black;
+    height: 400px;
+    width: 100%;
 }
