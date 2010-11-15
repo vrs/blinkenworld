@@ -4,7 +4,7 @@ if (typeof console !== 'undefined' && debug)
 else
 	log = function () {};
 
-document.addEventListener('DOMContentLoaded',function(){
+document.addEventListener('DOMContentLoaded', function (){
 	var intervalMs = 50,
 	secondsPerInterval = 60,
 	dotSize = 20,
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded',function(){
 			log("oops, HTTP " + response.status);
 			return
 		} else {
-			log("found, HTTP " + response.status)
+			log("found, HTTP " + response.status);
 		}
 		return JSON.parse(response.text)
 	})
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded',function(){
 		height = canvas.height;
 		
 		ctx.fillStyle = '#FFFFFF';
-		data.posts.forEach(function(post){
+		data.posts.forEach(function (post) {
 			animatePost(
 				(180+post.longitude)%360*width/360,
 				(90-post.latitude)*height/180);
@@ -75,12 +75,11 @@ function load(path) {
 		var req = new XMLHttpRequest();
 		req.open('GET', path, true);
 		req.onreadystatechange = function () {
-			if (req.readyState === 4) {
+			if (req.readyState === 4)
 				callback({
 					text: req.responseText,
 					status: req.status
-				})
-			}
+				});
 		};
 		req.send(null);
 	}
@@ -89,7 +88,7 @@ function load(path) {
 	}})
 }
 // asynchronous pipe
-function Async (fun, hook) {
+function Async(fun, hook) {
 	this.fun = fun;
 	this.hook = hook;
 }
@@ -98,7 +97,7 @@ Async.prototype.then = function (fun) {
 	return new Async(Function.prototype.then.call(this.fun, fun), this.hook)
 }
 Async.prototype.run = function () {
-	return this.hook(this.fun);
+	return this.hook(this.fun)
 }
 
 // synchronous pipe
@@ -114,15 +113,17 @@ Function.prototype.twice = function () {
 	var alreadycalled = 0,
 	args = [],
 	f = this;
-	return function() {
+	return function () {
 		// accumulate the arguments
 		args = Array.prototype.concat.apply(args, arguments).filter(function (x) {
 				return typeof x !== 'undefined'
 		});
-		if (++alreadycalled < 2) return;
-		else return f.apply(f, args);
+		if (++alreadycalled < 2)
+			return
+		else
+			return f.apply(f, args)
 	}
 }
 Function.prototype.run = function () { // f.run() alias for f()
-	return this.apply(this, Array.prototype.slice.apply(arguments));
+	return this.apply(this, Array.prototype.slice.apply(arguments))
 }
