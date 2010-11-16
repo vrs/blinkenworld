@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function (){
 	})
 	.then(function animatePosts(data) {
 		// naive approach
-		log("animating...");
 		var width = canvas.width,
 		height = canvas.height,
 		timer = data.first,
@@ -80,7 +79,6 @@ document.addEventListener('DOMContentLoaded', function (){
 			if (timer >= lastFrame)
 				window.clearInterval(paintInterval);
 		}, data.conf.intervalMs);
-		log("started");
 	})
 	.twice();
 
