@@ -1,11 +1,10 @@
-var debug = true, log;
-if (typeof console !== 'undefined' && debug)
-	log = (function (x) {console.log(x)});
-else
-	log = function () {};
-
 document.addEventListener('DOMContentLoaded', function (){
-	var prepareCanvas = function prepareCanvas(loadEvent) {
+	var debug = true,
+	log = function log(x) {
+		if (typeof console !== 'undefined' && debug)
+			console.log(x)
+	},
+	prepareCanvas = function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
 		canvas.height = background.height;
