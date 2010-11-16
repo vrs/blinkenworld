@@ -1,7 +1,7 @@
 {"conf":{
 "intervalMs":50,
 "secondsPerInterval":60,
-"dotSize":20,
+"dotSize":10,
 "queueLength":20
 },"posts":[
 {"time":1289224761,"latitude":0.0,"longitude":0.0}
