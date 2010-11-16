@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', function (){
 		if (typeof console !== 'undefined' && debug)
 			console.log(x)
 	},
+	canvas = document.getElementById('vis'),
+	ctx = canvas.getContext('2d'),
 	prepareCanvas = function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
@@ -22,53 +24,65 @@ document.addEventListener('DOMContentLoaded', function (){
 			return x-x%raw.conf.secondsPerInterval
 		},
 		// assume the data is in order
-		preparedPosts = {
+		data = {
 			first: roundDown(raw.posts[0].time),
 			last: roundDown(raw.posts[raw.posts.length-1].time),
 			conf: raw.conf
 		};
 		raw.posts.forEach(function (post) {
 			var time = roundDown(post.time);
-			if (!(time in preparedPosts))
-				preparedPosts[time] = [];
-			preparedPosts[time].push({
+			if (!(time in data))
+				data[time] = [];
+			data[time].push({
 				longitude: post.longitude,
 				latitude: post.latitude
 			})
 		});
-		log(preparedPosts);
-				
-		return preparedPosts
+
+		return data
 	})
 	.then(function animatePosts(data) {
+		// naive approach
 		log("animating...");
 		var width = canvas.width,
-		height = canvas.height;
-		
-		ctx.fillStyle = '#FFFFFF';
-		for (var groupname in data) {
-			// assume nobody prototypes properties with numeric keys
-			if (!isNaN(parseInt(groupname,10)))
-				data[groupname].forEach(function (post) {
-					animatePost((180+post.longitude)%360*width/360,
-						(90-post.latitude)*height/180,
-						data.conf.dotSize)
-				})
-		}
-		// TODO animationQueue
+		height = canvas.height,
+		timer = data.first,
+		lastFrame = data.last + data.conf.queueLength*data.conf.secondsPerInterval;
+		queue = [],
+		drawdot = function drawdot(coords) {
+			var longitude = coords.longitude,
+			latitude = coords.latitude;
+			ctx.beginPath();
+			ctx.arc(
+				(180+longitude)%360*width/360,
+				(90-latitude)*height/180,
+				data.conf.dotSize/2,
+				0,
+				Math.PI*2,
+				true); 
+			ctx.closePath();
+			ctx.fill();
+		},
+		drawdots = function drawdots(queue) {
+			ctx.clearRect(0, 0, width, height);
+			ctx.fillStyle = '#FFFFFF';
+			queue.forEach(function (dots) {
+				if (dots !== null)
+					dots.forEach(drawdot);
+			});
+		},
+		paintInterval = window.setInterval(function () {
+			queue.push(data[timer] || null);
+			if (queue.length >= data.conf.queueLength)
+				queue.shift();
+			timer += data.conf.secondsPerInterval;
+			drawdots(queue);
+			if (timer >= lastFrame)
+				window.clearInterval(paintInterval);
+		}, data.conf.intervalMs);
+		log("started");
 	})
-	.twice(),
-	animatePost = function animatePost(longitudepx, latitudepx, dotSize) {
-		ctx.beginPath();
-		ctx.arc(longitudepx, latitudepx, dotSize/2, 0, Math.PI*2, true); 
-		ctx.closePath();
-		ctx.fill();
-		// fade out
-		// destroy
-	},
-	
-	canvas = document.getElementById('vis'),
-	ctx = canvas.getContext('2d');
+	.twice();
 
 	// go
 	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
@@ -133,7 +147,7 @@ Function.prototype.twice = function () {
 	return function () {
 		// accumulate the arguments
 		args = Array.prototype.concat.apply(args, arguments).filter(function (x) {
-				return typeof x !== 'undefined'
+			return typeof x !== 'undefined'
 		});
 		if (++alreadycalled < 2)
 			return
