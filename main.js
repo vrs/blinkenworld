@@ -22,30 +22,25 @@ var terrapagesStreetLayer = new OpenLayers.Layer.WMS(
     }
 );
 map.addLayer(terrapagesStreetLayer);
-
-map.setCenter(new OpenLayers.LonLat(12, 50), 0);
-map.zoomTo(3);
+map.zoomToMaxExtent();
 
 document.addEventListener('DOMContentLoaded', function (){
     var markersLayer = new OpenLayers.Layer.Markers('Countryballs');
     var iconSize =  new OpenLayers.Size(17, 14);
     var iconOffset = new OpenLayers.Pixel(-(iconSize.w/2), -iconSize.h);
 
-    var Austria     = [16, 48, 'at.png'];
-    var Bavaria     = [11, 48, 'bavaria.png'];
-    var Denmark     = [10, 56, 'dk.png'];
-    var France      = [ 3, 46, 'fr.png'];
-    var Germany     = [12, 52, 'de.png'];
-    var Netherlands = [ 6, 52, 'nl.png'];
-    var Poland      = [21, 52, 'pl.png'];
-    var Switzerland = [ 8, 46, 'ch.png'];
-    
-    var Countryballs = [Austria, Bavaria, Denmark, France, Germany, Netherlands, Poland, Switzerland];
-    
-    for (i in Countryballs) {
-        var lon = Countryballs[i][0];
-        var lat = Countryballs[i][1];
-        var iconURL = 'img/countryballs/' + Countryballs[i][2];
+    var req = new XMLHttpRequest();  
+        req.open('GET', 'http://krautchan.net/ajax/geoip/lasthour', false);   
+        req.send(null);  
+
+    if(req.status == 200) {
+        intData = JSON.parse(req.responseText)["data"];
+    };
+
+    for (i in intData) {
+        var lon = intData[i][1];
+        var lat = intData[i][2];
+        var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0];
     
         var marker = new OpenLayers.Marker(
             new OpenLayers.LonLat(lon, lat),
