@@ -5,11 +5,7 @@ else
 	log = function () {};
 
 document.addEventListener('DOMContentLoaded', function (){
-	var intervalMs = 50,
-	secondsPerInterval = 60,
-	dotSize = 20,
-
-	prepareCanvas = function prepareCanvas(loadEvent) {
+	var prepareCanvas = function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
 		canvas.height = background.height;
@@ -21,7 +17,29 @@ document.addEventListener('DOMContentLoaded', function (){
 		} else {
 			log("found, HTTP " + response.status);
 		}
-		return JSON.parse(response.text)
+
+		var raw = JSON.parse(response.text),
+		roundDown = function (x) {
+			return x-x%raw.conf.secondsPerInterval
+		},
+		// assume the data is in order
+		preparedPosts = {
+			first: roundDown(raw.posts[0].time),
+			last: roundDown(raw.posts[raw.posts.length-1].time),
+			conf: raw.conf
+		};
+		raw.posts.forEach(function (post) {
+			var time = roundDown(post.time);
+			if (!(time in preparedPosts))
+				preparedPosts[time] = [];
+			preparedPosts[time].push({
+				longitude: post.longitude,
+				latitude: post.latitude
+			})
+		});
+		log(preparedPosts);
+				
+		return preparedPosts
 	})
 	.then(function animatePosts(data) {
 		log("animating...");
@@ -29,19 +47,19 @@ document.addEventListener('DOMContentLoaded', function (){
 		height = canvas.height;
 		
 		ctx.fillStyle = '#FFFFFF';
-		data.posts.forEach(function (post) {
-			animatePost(
-				(180+post.longitude)%360*width/360,
-				(90-post.latitude)*height/180);
-		});
-		// animationQueue
-		// zeittabelle
-		// tabelle durchlaufen (setInterval), an animationQueue anhängen
-		// gleichzeitig animationQueue abarbeiten, setTimeout
-		// oder einfach losanimieren
+		for (var groupname in data) {
+			// assume nobody prototypes properties with numeric keys
+			if (!isNaN(parseInt(groupname,10)))
+				data[groupname].forEach(function (post) {
+					animatePost((180+post.longitude)%360*width/360,
+						(90-post.latitude)*height/180,
+						data.conf.dotSize)
+				})
+		}
+		// TODO animationQueue
 	})
 	.twice(),
-	animatePost = function animatePost(longitudepx, latitudepx) {
+	animatePost = function animatePost(longitudepx, latitudepx, dotSize) {
 		ctx.beginPath();
 		ctx.arc(longitudepx, latitudepx, dotSize/2, 0, Math.PI*2, true); 
 		ctx.closePath();
