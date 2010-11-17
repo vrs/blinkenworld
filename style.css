@@ -4,3 +4,12 @@ html, body, #map {
     padding: 0;
     width: 100%;
 }
+
+a,
+a > img {
+    border: none;
+    display: block;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
