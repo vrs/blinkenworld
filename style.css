@@ -1,10 +1,4 @@
-body {
-    padding: 1em;
-    text-align: center;
-}
-
-#map {
-    border: 1px solid black;
-    height: 400px;
+html, body, #map {
+    height: 100%;
     width: 100%;
 }
