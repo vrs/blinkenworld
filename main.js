@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function (){
                     var lat = intData[i][2];
                     // workaround for API fail
                         if (intData[i][0] == 'gb') {
-                            intData[i][0] = 'uk';
                             var iconSize =  new OpenLayers.Size(19, 19);
                         } else {
                             var iconSize =  new OpenLayers.Size(17, 14);
