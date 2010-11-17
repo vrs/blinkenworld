@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function (){
 	var debug = true,
+	debugdata = false,
 	log = function log(x) {
 		if (typeof console !== 'undefined' && debug)
 			console.log(x)
@@ -30,12 +31,12 @@ document.addEventListener('DOMContentLoaded', function (){
 			conf: raw.conf
 		};
 		raw.posts.forEach(function (post) {
-			var time = roundDown(post.time);
+			var time = roundDown(parseInt(post.time, 10));
 			if (!(time in data))
 				data[time] = [];
 			data[time].push({
-				longitude: post.longitude,
-				latitude: post.latitude
+				longitude: parseFloat(post.longitude),
+				latitude: parseFloat(post.latitude)
 			})
 		});
 
@@ -49,16 +50,8 @@ document.addEventListener('DOMContentLoaded', function (){
 		lastFrame = data.last + data.conf.queueLength*data.conf.secondsPerInterval;
 		queue = [],
 		drawdot = function drawdot(coords) {
-			var longitude = coords.longitude,
-			latitude = coords.latitude;
 			ctx.beginPath();
-			ctx.arc(
-				(180+longitude)%360*width/360,
-				(90-latitude)*height/180,
-				data.conf.dotSize/2,
-				0,
-				Math.PI*2,
-				true); 
+			ctx.arc((180+coords.longitude)%360*width/360, (90-coords.latitude)*height/180, data.conf.dotSize/2, 0, Math.PI*2, true); 
 			ctx.closePath();
 			ctx.fill();
 		},
@@ -84,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function (){
 
 	// go
 	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
-	load(debug ? 'postdata-sample.json' : 'postdata.json').then(processPosts).run();
+	load(debugdata ? 'postdata-sample.json' : 'postdata.json').then(processPosts).run();
 	// then(reset)?
 }, false);
 
