@@ -30,26 +30,32 @@ document.addEventListener('DOMContentLoaded', function (){
     var iconOffset = new OpenLayers.Pixel(-(iconSize.w/2), -iconSize.h);
 
     var req = new XMLHttpRequest();  
-        req.open('GET', 'http://krautchan.net/ajax/geoip/lasthour', false);   
-        req.send(null);  
+    req.open('GET', 'http://krautchan.net/ajax/geoip/lasthour', true);  
+    req.onreadystatechange = function(e) {
+        if (req.readyState == 4) {  
+            if(req.status == 200) {
+                intData = JSON.parse(req.responseText)["data"];
 
-    if(req.status == 200) {
-        intData = JSON.parse(req.responseText)["data"];
+                for (i in intData) {
+                    var lon = intData[i][1];
+                    var lat = intData[i][2];
+                    var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
+            
+                    var marker = new OpenLayers.Marker(
+                        new OpenLayers.LonLat(lon, lat),
+                        new OpenLayers.Icon(iconURL, iconSize, iconOffset)
+                    );
+            
+                    markersLayer.addMarker(marker);
+                };
+                
+                map.addLayer(markersLayer);
+                markersLayer.setVisibility(true);
+            } else {
+                alert('Could not reach Krautchan /int/ API.');
+            }
+        }
     };
+    req.send(null);
 
-    for (i in intData) {
-        var lon = intData[i][1];
-        var lat = intData[i][2];
-        var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
-    
-        var marker = new OpenLayers.Marker(
-            new OpenLayers.LonLat(lon, lat),
-            new OpenLayers.Icon(iconURL, iconSize, iconOffset)
-        );
-        
-        markersLayer.addMarker(marker);
-    };
-
-    map.addLayer(markersLayer);
-    markersLayer.setVisibility(true);
 }, false);
