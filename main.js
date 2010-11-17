@@ -39,6 +39,11 @@ document.addEventListener('DOMContentLoaded', function (){
                 for (i in intData) {
                     var lon = intData[i][1];
                     var lat = intData[i][2];
+                    // workaround for API fail
+                        if (intData[i][0] == 'gb')
+                            {
+                                intData[i][0] = 'uk';
+                            }
                     var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
             
                     var marker = new OpenLayers.Marker(
