@@ -37,12 +37,22 @@ document.addEventListener('DOMContentLoaded', function (){
                 for (i in intData) {
                     var lon = intData[i][1];
                     var lat = intData[i][2];
-                    // workaround for API fail
-                        if (intData[i][0] == 'gb') {
-                            var iconSize =  new OpenLayers.Size(19, 19);
-                        } else {
-                            var iconSize =  new OpenLayers.Size(17, 14);
-                        }
+
+                    // image size cannot be known before load
+                    if (intData[i][0] == 'gb') {
+                        var iconSize =  new OpenLayers.Size(19, 19);
+                    } else if (intData[i][0] == 'id') {
+                        var iconSize =  new OpenLayers.Size(17, 18);
+                    } else if (intData[i][0] == 'il') {
+                        var iconSize =  new OpenLayers.Size(18, 18);
+                    } else if (intData[i][0] == 'kz') {
+                        var iconSize =  new OpenLayers.Size(22, 14);
+                    } else if (intData[i][0] == 'staff') {
+                        var iconSize =  new OpenLayers.Size(25, 20);
+                    } else {
+                        var iconSize =  new OpenLayers.Size(17, 14);
+                    }
+
                     var iconOffset = new OpenLayers.Pixel(-(iconSize.w/2), -iconSize.h);
                     var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
 
