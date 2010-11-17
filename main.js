@@ -26,8 +26,6 @@ map.zoomToMaxExtent();
 
 document.addEventListener('DOMContentLoaded', function (){
     var markersLayer = new OpenLayers.Layer.Markers('Countryballs');
-    var iconSize =  new OpenLayers.Size(17, 14);
-    var iconOffset = new OpenLayers.Pixel(-(iconSize.w/2), -iconSize.h);
 
     var req = new XMLHttpRequest();  
     req.open('GET', 'http://krautchan.net/ajax/geoip/lasthour', true);  
@@ -40,12 +38,15 @@ document.addEventListener('DOMContentLoaded', function (){
                     var lon = intData[i][1];
                     var lat = intData[i][2];
                     // workaround for API fail
-                        if (intData[i][0] == 'gb')
-                            {
-                                intData[i][0] = 'uk';
-                            }
+                        if (intData[i][0] == 'gb') {
+                            intData[i][0] = 'uk';
+                            var iconSize =  new OpenLayers.Size(19, 19);
+                        } else {
+                            var iconSize =  new OpenLayers.Size(17, 14);
+                        }
+                    var iconOffset = new OpenLayers.Pixel(-(iconSize.w/2), -iconSize.h);
                     var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
-            
+
                     var marker = new OpenLayers.Marker(
                         new OpenLayers.LonLat(lon, lat),
                         new OpenLayers.Icon(iconURL, iconSize, iconOffset)
