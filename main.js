@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function (){
 		},
 		drawdots = function drawdots(queue) {
 			ctx.clearRect(0, 0, width, height);
-			ctx.fillStyle = '#FFFFFF';
+			ctx.fillStyle = '#FFFF00';
 			queue.forEach(function (dots) {
 				if (dots !== null)
 					dots.forEach(drawdot);
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', function (){
 
 	// go
 	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
-	load(debugdata ? 'postdata-sample.json' : 'postdata.json').then(processPosts).run();
+	load(debugdata ? 'postdata-sample.json' : 'data/posts.json').then(processPosts).run();
 	// then(reset)?
 }, false);
 
