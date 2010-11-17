@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function (){
     for (i in intData) {
         var lon = intData[i][1];
         var lat = intData[i][2];
-        var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0];
+        var iconURL = 'http://krautchan.net/images/balls/' + intData[i][0] + '.png';
     
         var marker = new OpenLayers.Marker(
             new OpenLayers.LonLat(lon, lat),
