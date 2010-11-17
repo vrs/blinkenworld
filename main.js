@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	processPosts = (function processPosts(response) {
 		if (response.status !== 200 && response.status !== 304) {
 			log("oops, HTTP " + response.status);
-			return
+			return null
 		} else {
 			log("found, HTTP " + response.status);
 		}
@@ -133,8 +133,13 @@ Async.prototype.run = function () {
 Function.prototype.then = function (g) {
 	var f = this;
 	return function () {
-		var x = Array.prototype.slice.apply(arguments);
-		return g(f.apply(f, x))
+		var x = Array.prototype.slice.apply(arguments),
+		res = f.apply(f, x);
+		// null -> fall-through
+		if (res === null)
+			return null
+		else
+			return g(res)
 	}
 }
 // defer the first function call, wait for the next one
