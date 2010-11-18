@@ -7,12 +7,18 @@ document.addEventListener('DOMContentLoaded', function (){
 	},
 	canvas = document.getElementById('vis'),
 	ctx = canvas.getContext('2d'),
-	prepareCanvas = function prepareCanvas(loadEvent) {
+	prepareCanvas = (function unpack (imglist) {
+		return imglist[0]
+	})
+	.then(function prepareCanvas(loadEvent) {
 		var background = loadEvent.target;
 		canvas.width = background.width;
 		canvas.height = background.height;
-	},
-	processPosts = (function processPosts(response) {
+	}),
+	processPosts = (function unpack (acc) {
+		return acc[0][0] // blame accumulate
+	})
+	.then(function processPosts(response) {
 		if (response.status !== 200 && response.status !== 304) {
 			log("oops, HTTP " + response.status);
 			return null
@@ -76,11 +82,11 @@ document.addEventListener('DOMContentLoaded', function (){
 				window.clearInterval(paintInterval);
 		}, data.conf.intervalMs);
 	})
-	.twice();
+	.accumulate(2);
 
 	// go
-	load('worldmap.png').then(prepareCanvas).then(processPosts).run();
-	load(debugdata ? 'postdata-sample.json' : 'data/posts.json').then(processPosts).run();
+	load(['worldmap.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
+	load([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(processPosts.fix(0)).run();
 	// then(reset)?
 }, false);
 
@@ -88,15 +94,16 @@ document.addEventListener('DOMContentLoaded', function (){
  * library functions
  * inspired by Arrowlets
  * http://www.cs.umd.edu/projects/PL/arrowlets/
+ * here be dragons
  */
 // asynchronous loading of content, starting a pipe
-function load(path) {
-	function loadImage(callback) {
+function load(paths) {
+	function loadImage(path, callback) {
 		var img = document.createElement('img');
 		img.addEventListener('load', callback, false);
 		img.src = path;
 	}
-	function loadResource(callback) {
+	function loadResource(path, callback) {
 		var req = new XMLHttpRequest();
 		req.open('GET', path, true);
 		req.onreadystatechange = function () {
@@ -109,7 +116,12 @@ function load(path) {
 		req.send(null);
 	}
 	return ({ then: function (callback) {
-		return new Async(callback, /\.(png|jpg|gif)$/.test(path) ? loadImage : loadResource)
+		return new Async(callback.accumulate(paths.length), function (callback) {
+			paths.forEach(function (path, i) {
+				(/\.(png|jpg|gif)$/.test(path) ? loadImage : loadResource)
+					(path, callback.fix(i));
+			});
+		})
 	}})
 }
 // asynchronous pipe
@@ -130,12 +142,31 @@ Function.prototype.then = function (g) {
 	var f = this;
 	return function () {
 		var x = Array.prototype.slice.apply(arguments),
-		res = f.apply(f, x);
+		res = f.apply(this, x);
 		// null -> fall-through
 		if (res === null)
 			return null
 		else
 			return g(res)
+	}
+}
+// defer a function call n-1 times
+// every call returns to accumulator[i]
+// undefined return values are not filtered
+// at the end, f gets called with [args, args, ...]
+Function.prototype.accumulate = function (n) {
+	var called = 0,
+	accumulator = new Array(n),
+	f = this;
+	// keep the order
+	// don't pass i and this will break in exciting ways
+	// NOTE perhaps make a version that doesn't keep order?
+	return function (i) {
+		accumulator[i] = Array.prototype.slice.call(arguments, 1);
+		if (++called < n)
+			return
+		else
+			return f.apply(this, accumulator) // flatten?
 	}
 }
 // defer the first function call, wait for the next one
@@ -151,9 +182,19 @@ Function.prototype.twice = function () {
 		if (++alreadycalled < 2)
 			return
 		else
-			return f.apply(f, args)
+			return f.apply(this, args)
 	}
 }
-Function.prototype.run = function () { // f.run() alias for f()
+// alias for f(), analogous to Async, but largely useless
+Function.prototype.run = function () {
 	return this.apply(this, Array.prototype.slice.apply(arguments))
+}
+// fix the first arguments of a function
+// useful for assigning 'slots' when using accumulate
+Function.prototype.fix = function () {
+	var f = this,
+	args = Array.prototype.slice.apply(arguments);
+	return function () {
+		return f.apply(this, args.concat(Array.prototype.slice.apply(arguments)))
+	}
 }
