@@ -7,18 +7,18 @@ document.addEventListener('DOMContentLoaded', function (){
 	},
 	canvas = document.getElementById('vis'),
 	ctx = canvas.getContext('2d'),
-	prepareCanvas = (function unpack (imglist) {
-		return imglist[0]
-	})
-	.then(function prepareCanvas(loadEvent) {
-		var background = loadEvent.target;
+	prepareCanvas = (function prepareCanvas(bgLoaded, maskLoaded) {
+		var background = bgLoaded[0].target;
 		canvas.width = background.width;
 		canvas.height = background.height;
+		return maskLoaded[0].target
 	}),
-	processPosts = (function unpack (acc) {
-		return acc[0][0] // blame accumulate
+	processPosts = (function unpack (data, lightmask) {
+		return [data[0][0], lightmask[0]];
 	})
-	.then(function processPosts(response) {
+	.then(function processPosts(args) {
+		var response = args[0],
+		lightmask = args[1];
 		if (response.status !== 200 && response.status !== 304) {
 			log("oops, HTTP " + response.status);
 			return null
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	.accumulate(2);
 
 	// go
-	load(['worldmap.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
+	load(['img/worldmap.png', 'img/lightmask.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
 	load([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(processPosts.fix(0)).run();
 	// then(reset)?
 }, false);
@@ -164,7 +164,7 @@ Function.prototype.accumulate = function (n) {
 	return function (i) {
 		accumulator[i] = Array.prototype.slice.call(arguments, 1);
 		if (++called < n)
-			return
+			return null
 		else
 			return f.apply(this, accumulator) // flatten?
 	}
