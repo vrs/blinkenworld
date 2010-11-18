@@ -51,14 +51,17 @@ document.addEventListener('DOMContentLoaded', function (){
 		queue = [],
 		drawdot = function drawdot(coords) {
 			ctx.beginPath();
-			ctx.arc((180+coords.longitude)%360*width/360, (90-coords.latitude)*height/180, data.conf.dotSize/2, 0, Math.PI*2, true); 
+			ctx.arc(Math.floor((180+coords.longitude)%360*width/360), Math.floor((90-coords.latitude)*height/180), data.conf.dotSize/2, 0, Math.PI*2, true); 
 			ctx.closePath();
 			ctx.fill();
 		},
-		drawdots = function drawdots(queue) {
+		dawn = function dawn(time) {
+			// either repaint every time or translate()
+		},
+		paint = function paint(queue) {
 			ctx.clearRect(0, 0, width, height);
-			ctx.fillStyle = '#FFFF00';
-			queue.forEach(function (dots) {
+			queue.forEach(function (dots, i) {
+				ctx.fillStyle = 'rgba(255,255,0,'+i/data.conf.queueLength+')';
 				if (dots !== null)
 					dots.forEach(drawdot);
 			});
@@ -68,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function (){
 			if (queue.length >= data.conf.queueLength)
 				queue.shift();
 			timer += data.conf.secondsPerInterval;
-			drawdots(queue);
+			paint(queue);
 			if (timer >= lastFrame)
 				window.clearInterval(paintInterval);
 		}, data.conf.intervalMs);
