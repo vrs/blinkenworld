@@ -169,22 +169,6 @@ Function.prototype.accumulate = function (n) {
 			return f.apply(this, accumulator) // flatten?
 	}
 }
-// defer the first function call, wait for the next one
-Function.prototype.twice = function () {
-	var alreadycalled = 0,
-	args = [],
-	f = this;
-	return function () {
-		// accumulate the arguments
-		args = Array.prototype.concat.apply(args, arguments).filter(function (x) {
-			return typeof x !== 'undefined'
-		});
-		if (++alreadycalled < 2)
-			return
-		else
-			return f.apply(this, args)
-	}
-}
 // alias for f(), analogous to Async, but largely useless
 Function.prototype.run = function () {
 	return this.apply(this, Array.prototype.slice.apply(arguments))
