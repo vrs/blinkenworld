@@ -63,12 +63,11 @@ document.addEventListener('DOMContentLoaded', function (){
 			ctx.fill();
 		},
 		dawn = function dawn(time) {
-			var offset = Math.floor(((time+3600+43200)%86400)/86400*width)
-			ctx.globalAlpha = 0.5;
+			// meh, this shouldn't draw the mask every time
+			var offset = Math.floor(((3600-43200-time)%86400)/86400*width)
+			ctx.globalAlpha = 0.25;
 			ctx.drawImage(lightmask, offset, 0);
-			ctx.drawImage(lightmask, offset-width, 0);
 			ctx.globalAlpha = 1;
-			// either repaint every time or translate()
 		},
 		paint = function paint(queue) {
 			queue.forEach(function (dots, i) {
