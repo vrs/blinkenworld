@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function (){
 			queue.push(data[timer] || null);
 			if (queue.length >= data.conf.queueLength)
 				queue.shift();
-			ctx.clearRect(0, 0, width, height);
+			canvas.width = width;
 			dawn(timer);
 			paint(queue);
 			timer += data.conf.secondsPerInterval;
