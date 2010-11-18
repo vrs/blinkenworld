@@ -46,11 +46,12 @@ document.addEventListener('DOMContentLoaded', function (){
 			})
 		});
 
-		return data
+		return [data, lightmask]
 	})
-	.then(function animatePosts(data) {
-		// naive approach
-		var width = canvas.width,
+	.then(function animatePosts(args) {
+		var data = args[0],
+		lightmask = args[1],
+		width = canvas.width,
 		height = canvas.height,
 		timer = data.first,
 		lastFrame = data.last + data.conf.queueLength*data.conf.secondsPerInterval;
@@ -62,24 +63,30 @@ document.addEventListener('DOMContentLoaded', function (){
 			ctx.fill();
 		},
 		dawn = function dawn(time) {
+			var offset = Math.floor(((time+3600+43200)%86400)/86400*width)
+			ctx.globalAlpha = 0.5;
+			ctx.drawImage(lightmask, offset, 0);
+			ctx.drawImage(lightmask, offset-width, 0);
+			ctx.globalAlpha = 1;
 			// either repaint every time or translate()
 		},
 		paint = function paint(queue) {
-			ctx.clearRect(0, 0, width, height);
 			queue.forEach(function (dots, i) {
 				ctx.fillStyle = 'rgba(255,255,0,'+i/data.conf.queueLength+')';
 				if (dots !== null)
 					dots.forEach(drawdot);
 			});
 		},
-		paintInterval = window.setInterval(function () {
+		tick = window.setInterval(function () {
 			queue.push(data[timer] || null);
 			if (queue.length >= data.conf.queueLength)
 				queue.shift();
-			timer += data.conf.secondsPerInterval;
+			ctx.clearRect(0, 0, width, height);
+			dawn(timer);
 			paint(queue);
+			timer += data.conf.secondsPerInterval;
 			if (timer >= lastFrame)
-				window.clearInterval(paintInterval);
+				window.clearInterval(tick);
 		}, data.conf.intervalMs);
 	})
 	.accumulate(2);
