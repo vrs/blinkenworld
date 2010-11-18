@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	.accumulate(2);
 
 	// go
-	load(['img/worldmap.png', 'img/lightmask.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
+	load(['img/worldmap.jpg', 'img/lightmask.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
 	load([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(processPosts.fix(0)).run();
 	// then(reset)?
 }, false);
