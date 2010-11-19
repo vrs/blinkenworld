@@ -7,14 +7,25 @@ document.addEventListener('DOMContentLoaded', function (){
 	},
 	canvas = document.getElementById('vis'),
 	ctx = canvas.getContext('2d'),
-	prepareCanvas = (function prepareCanvas(bgLoaded, maskLoaded) {
-		var background = bgLoaded[0].target;
+	loadingMsg = function (name, paths) {
+		var msg = document.createElement('p');
+		msg.appendChild(document.createTextNode("Loading "+paths.join(", ")+"..."));
+		msg.setAttribute('id', 'loadstatus-'+name);
+		document.getElementById('loadstatus').appendChild(msg);
+		return paths
+	},
+	loadingDone = function (name) {
+		document.getElementById('loadstatus-'+name).appendChild(document.createTextNode(" Done."));
+		return Array.prototype.slice.call(arguments, 1);
+	}
+	prepareCanvas = (function prepareCanvas(args) {
+		var background = args[0][0].target;
 		canvas.width = background.width;
 		canvas.height = background.height;
-		return maskLoaded[0].target
+		return args[1][0].target
 	}),
 	processPosts = (function unpack (data, lightmask) {
-		return [data[0][0], lightmask[0]];
+		return [data[0][0][0], lightmask[0]];
 	})
 	.then(function processPosts(args) {
 		var response = args[0],
@@ -91,8 +102,11 @@ document.addEventListener('DOMContentLoaded', function (){
 	.accumulate(2);
 
 	// go
-	load(['img/worldmap.jpg', 'img/lightmask.png']).then(prepareCanvas).then(processPosts.fix(1)).run();
-	load([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(processPosts.fix(0)).run();
+	var echo = Function.constant;
+	echo(['img/worldmap.jpg', 'img/lightmask.png']).then(loadingMsg.fix('images')).then(load).run()
+		.then(loadingDone.fix('images')).then(prepareCanvas).then(processPosts.fix(1)).run();
+	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.fix('posts')).then(load).run()
+		.then(loadingDone.fix('posts')).then(processPosts.fix(0)).run();
 	// then(reset)?
 }, false);
 
@@ -143,6 +157,12 @@ Async.prototype.run = function () {
 	return this.hook(this.fun)
 }
 
+// create a constant function
+Function.constant = function (x) {
+	return function () {
+		return x
+	}
+}
 // synchronous pipe
 Function.prototype.then = function (g) {
 	var f = this;
@@ -175,7 +195,7 @@ Function.prototype.accumulate = function (n) {
 			return f.apply(this, accumulator) // flatten?
 	}
 }
-// alias for f(), analogous to Async, but largely useless
+// alias for f(), analogous to Async
 Function.prototype.run = function () {
 	return this.apply(this, Array.prototype.slice.apply(arguments))
 }
