@@ -95,8 +95,10 @@ document.addEventListener('DOMContentLoaded', function (){
 			dawn(timer);
 			paint(queue);
 			timer += data.conf.secondsPerInterval;
-			if (timer >= lastFrame)
-				window.clearInterval(tick);
+			//if (timer >= lastFrame)
+			//	window.clearInterval(tick);
+			if (timer >= data.last)
+				timer = data.first;
 		}, data.conf.intervalMs);
 	})
 	.accumulate(2);
