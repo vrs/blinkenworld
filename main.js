@@ -101,10 +101,12 @@ document.addEventListener('DOMContentLoaded', function (){
 			if (timer >= data.last)
 				timer = data.first;
 		}, data.conf.intervalMs).start();
-		document.getElementById('canvas-container')
-			.addEventListener('click', control.tick.toggle, false);// FIXME quick and dirty
+		when(document.getElementById('canvas-container'), 'click').then(togglePlaying).run();
 	})
 	.accumulate(2),
+	togglePlaying = function togglePlaying() {
+		control.tick.toggle();
+	},
 
 	// go
 	echo = Function.constant;
@@ -146,6 +148,13 @@ function load(paths) {
 				(/\.(png|jpg|gif)$/.test(path) ? loadImage : loadResource)
 					(path, callback.fix(i));
 			});
+		})
+	}})
+}
+function when(el, eventType, useCapture) {
+	return ({ then: function (callback) {
+		return new Async(callback, function (callback) {
+			el.addEventListener(eventType, callback, useCapture || false);
 		})
 	}})
 }
@@ -232,8 +241,6 @@ function Interval(f, tick) {
 		return self
 	}
 	this.toggle = function () {
-		if (running) self.stop();
-		else self.start();
-		return self
+		return running ? self.stop() : self.start();
 	}
 }
