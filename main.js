@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function (){
 				timer = data.first;
 		}, data.conf.intervalMs).start();
 		document.getElementById('canvas-container')
-			.addEventListener('click', control.tick.toggle);// FIXME
+			.addEventListener('click', control.tick.toggle, false);// FIXME quick and dirty
 	})
 	.accumulate(2),
 
