@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	},
 	canvas = document.getElementById('vis'),
 	ctx = canvas.getContext('2d'),
-	control = {}, // global control
+	control = {tick: undefined, running: true}, // global control
 	loadingMsg = function (name, paths) {
 		var msg = document.createElement('p');
 		msg.appendChild(document.createTextNode("Loading "+paths.join(", ")+"..."));
@@ -87,6 +87,17 @@ document.addEventListener('DOMContentLoaded', function (){
 				if (dots !== null)
 					dots.forEach(drawdot);
 			});
+		},
+		togglePlaying = function togglePlaying() {
+			if (control.running) {
+				ctx.save();
+				ctx.fillStyle = 'rgba(0,0,0,0.5)';
+				ctx.fillRect(width/2-100, height/2-100, 80, 200)
+				ctx.fillRect(width/2+20, height/2-100, 80, 200)
+				ctx.restore();
+			}
+			control.running ^= 1;
+			control.tick.toggle();
 		};
 		control.tick = new Interval(function () {
 			queue.push(data[timer] || null);
@@ -104,9 +115,6 @@ document.addEventListener('DOMContentLoaded', function (){
 		when(document.getElementById('canvas-container'), 'click').then(togglePlaying).run();
 	})
 	.accumulate(2),
-	togglePlaying = function togglePlaying() {
-		control.tick.toggle();
-	},
 
 	// go
 	echo = Function.constant;
