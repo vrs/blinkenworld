@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	},
 	canvas = document.getElementById('vis'),
 	ctx = canvas.getContext('2d'),
+	control = {}, // global control
 	loadingMsg = function (name, paths) {
 		var msg = document.createElement('p');
 		msg.appendChild(document.createTextNode("Loading "+paths.join(", ")+"..."));
@@ -25,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function (){
 		return args[1][0].target
 	}),
 	processPosts = (function unpack (data, lightmask) {
-		return [data[0][0][0], lightmask[0]];
+		return [data[0][0][0], lightmask[0]]
 	})
 	.then(function processPosts(args) {
 		var response = args[0],
@@ -86,8 +87,8 @@ document.addEventListener('DOMContentLoaded', function (){
 				if (dots !== null)
 					dots.forEach(drawdot);
 			});
-		},
-		tick = window.setInterval(function () {
+		};
+		control.tick = new Interval(function () {
 			queue.push(data[timer] || null);
 			if (queue.length >= data.conf.queueLength)
 				queue.shift();
@@ -96,15 +97,17 @@ document.addEventListener('DOMContentLoaded', function (){
 			paint(queue);
 			timer += data.conf.secondsPerInterval;
 			//if (timer >= lastFrame)
-			//	window.clearInterval(tick);
+			//	control.tick.stop();
 			if (timer >= data.last)
 				timer = data.first;
-		}, data.conf.intervalMs);
+		}, data.conf.intervalMs).start();
+		document.getElementById('canvas-container')
+			.addEventListener('click', control.tick.toggle);// FIXME
 	})
-	.accumulate(2);
+	.accumulate(2),
 
 	// go
-	var echo = Function.constant;
+	echo = Function.constant;
 	echo(['img/worldmap.jpg', 'img/lightmask.png']).then(loadingMsg.fix('images')).then(load).run()
 		.then(loadingDone.fix('images')).then(prepareCanvas).then(processPosts.fix(1)).run();
 	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.fix('posts')).then(load).run()
@@ -208,5 +211,29 @@ Function.prototype.fix = function () {
 	args = Array.prototype.slice.apply(arguments);
 	return function () {
 		return f.apply(this, args.concat(Array.prototype.slice.apply(arguments)))
+	}
+}
+// Interval object, useful for pausing intervals
+// no error handling, no cleverness
+// the interval is passed as a parameter
+function Interval(f, tick) {
+	var interval,
+	running = false,
+	self = this;
+	this.start = function start() {
+		interval = window.setInterval(f.fix(self), tick);
+		running = true;
+		return self
+	}
+	this.pause = undefined; // unimplemented, requires saving the time
+	this.stop = function stop() {
+		window.clearInterval(interval);
+		running = false;
+		return self
+	}
+	this.toggle = function () {
+		if (running) self.stop();
+		else self.start();
+		return self
 	}
 }
