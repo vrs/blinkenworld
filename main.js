@@ -19,18 +19,15 @@ document.addEventListener('DOMContentLoaded', function (){
 		document.getElementById('loadstatus-'+name).appendChild(document.createTextNode(" Done."));
 		return Array.prototype.slice.call(arguments, 1);
 	},
-	prepareCanvas = (function prepareCanvas(args) {
-		var background = args[0][0].target;
+	prepareCanvas = (function prepareCanvas(loadEvent) {
+		var background = loadEvent[0][0].target;
 		canvas.width = background.width;
 		canvas.height = background.height;
-		return args[1][0].target
 	}),
-	processPosts = (function unpack (data, lightmask) {
-		return [data[0][0][0], lightmask[0]]
+	processPosts = (function unpack (data) {
+		return data[0][0][0]
 	})
-	.then(function processPosts(args) {
-		var response = args[0],
-		lightmask = args[1];
+	.then(function processPosts(response) {
 		if (response.status !== 200 && response.status !== 304) {
 			log("oops, HTTP " + response.status);
 			return null
@@ -58,12 +55,10 @@ document.addEventListener('DOMContentLoaded', function (){
 			})
 		});
 
-		return [data, lightmask]
+		return data
 	})
-	.then(function animatePosts(args) {
-		var data = args[0],
-		lightmask = args[1],
-		width = canvas.width,
+	.then(function animatePosts(data) {
+		var width = canvas.width,
 		height = canvas.height,
 		timer = data.first,
 		lastFrame = data.last + data.conf.queueLength*data.conf.secondsPerInterval;
@@ -74,13 +69,46 @@ document.addEventListener('DOMContentLoaded', function (){
 			ctx.closePath();
 			ctx.fill();
 		},
-		dawn = function dawn(time) {
-			// meh, this shouldn't draw the mask every time
-			var offset = Math.floor(((3600-43200-time)%86400)/86400*width)
-			ctx.globalAlpha = 0.25;
-			ctx.drawImage(lightmask, offset, 0);
-			ctx.globalAlpha = 1;
-		},
+		dawn = (function () {
+			var tzOffset = +1, // GMT+1
+			epsilon = (function () { // ecliptic
+				var now = new Date(),
+				jan01 = new Date(now.getFullYear(), 0, 1),
+				dayOfYear = Math.ceil((now - jan01)/86400000);
+				return 23.433*Math.sin((dayOfYear+9-91.25)/365*2*Math.PI)*(Math.PI/180)
+			})(),
+			curve = Array.init(73).map(function (nothing, i) {
+				return [
+					i/24,
+					Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12))/2 //?
+				]
+			}).map(function (coords) {
+				return [coords[0]*canvas.width-canvas.width/2, (1+coords[1])*canvas.height/2]
+			}),
+			lightmask = document.createElement('canvas'),
+			lctx = lightmask.getContext('2d');
+			lightmask.width = 3*canvas.width;
+			lightmask.height = canvas.height;
+			lctx.beginPath();
+			lctx.moveTo(0,0);
+			lctx.lineTo(0, curve[0][1]);
+			curve.forEach(function(coords) {
+				lctx.lineTo(coords[0], coords[1]);
+				//lctx.quadraticCurveTo(?, ?, coords[0], coords[1]);
+			});
+			lctx.lineTo(lightmask.width, 0);
+			lctx.closePath();
+			lctx.fill();
+			
+			return function dawn(time) {
+				// meh, this shouldn't draw the mask every time
+				// TODO test if moving an image is more efficient
+				var offset = Math.floor(((3600-43200-time)%86400)/86400*canvas.width)
+				ctx.globalAlpha = 0.25;
+				ctx.drawImage(lightmask, offset, 0);
+				ctx.globalAlpha = 1;
+			}
+		})(),
 		paint = function paint(queue) {
 			queue.forEach(function (dots, i) {
 				ctx.fillStyle = 'rgba(255,255,0,'+i/data.conf.queueLength+')';
@@ -118,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function (){
 
 	// go
 	echo = Function.constant;
-	echo(['img/worldmap.jpg', 'img/lightmask.png']).then(loadingMsg.curry('images')).then(load).run()
+	echo(['img/worldmap.jpg']).then(loadingMsg.curry('images')).then(load).run()
 		.then(loadingDone.curry('images')).then(prepareCanvas).then(processPosts.curry(1)).run();
 	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.curry('posts')).then(load).run()
 		.then(loadingDone.curry('posts')).then(processPosts.curry(0)).run();
@@ -251,4 +279,11 @@ function Interval(f, tick) {
 	this.toggle = function () {
 		return running ? self.stop() : self.start();
 	}
+}
+Array.init = function (l) {
+	var arr = new Array(l);
+	for (var i = 0; i < l; i++) {
+		arr[i] = 0;
+	}
+	return arr
 }
