@@ -118,10 +118,10 @@ document.addEventListener('DOMContentLoaded', function (){
 
 	// go
 	echo = Function.constant;
-	echo(['img/worldmap.jpg', 'img/lightmask.png']).then(loadingMsg.fix('images')).then(load).run()
-		.then(loadingDone.fix('images')).then(prepareCanvas).then(processPosts.fix(1)).run();
-	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.fix('posts')).then(load).run()
-		.then(loadingDone.fix('posts')).then(processPosts.fix(0)).run();
+	echo(['img/worldmap.jpg', 'img/lightmask.png']).then(loadingMsg.curry('images')).then(load).run()
+		.then(loadingDone.curry('images')).then(prepareCanvas).then(processPosts.curry(1)).run();
+	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.curry('posts')).then(load).run()
+		.then(loadingDone.curry('posts')).then(processPosts.curry(0)).run();
 	// then(reset)?
 }, false);
 
@@ -154,7 +154,7 @@ function load(paths) {
 		return new Async(callback.accumulate(paths.length), function (callback) {
 			paths.forEach(function (path, i) {
 				(/\.(png|jpg|gif)$/.test(path) ? loadImage : loadResource)
-					(path, callback.fix(i));
+					(path, callback.curry(i));
 			});
 		})
 	}})
@@ -221,9 +221,9 @@ Function.prototype.accumulate = function (n) {
 Function.prototype.run = function () {
 	return this.apply(this, Array.prototype.slice.apply(arguments))
 }
-// fix the first arguments of a function
+// save the first arguments of a function (obvious)
 // useful for assigning 'slots' when using accumulate
-Function.prototype.fix = function () {
+Function.prototype.curry = function () {
 	var f = this,
 	args = Array.prototype.slice.apply(arguments);
 	return function () {
@@ -238,7 +238,7 @@ function Interval(f, tick) {
 	running = false,
 	self = this;
 	this.start = function start() {
-		interval = window.setInterval(f.fix(self), tick);
+		interval = window.setInterval(f.curry(self), tick);
 		running = true;
 		return self
 	}
