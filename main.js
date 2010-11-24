@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function (){
 	loadingDone = function (name) {
 		document.getElementById('loadstatus-'+name).appendChild(document.createTextNode(" Done."));
 		return Array.prototype.slice.call(arguments, 1);
-	}
+	},
 	prepareCanvas = (function prepareCanvas(args) {
 		var background = args[0][0].target;
 		canvas.width = background.width;
