@@ -75,15 +75,15 @@ document.addEventListener('DOMContentLoaded', function (){
 				var now = new Date(),
 				jan01 = new Date(now.getFullYear(), 0, 1),
 				dayOfYear = Math.ceil((now - jan01)/86400000);
-				return 23.433*Math.sin((dayOfYear+9-91.25)/365*2*Math.PI)*(Math.PI/180)
+				return 23.433*Math.cos((dayOfYear+9)/365*2*Math.PI)*(Math.PI/180)
 			})(),
 			curve = Array.init(73).map(function (nothing, i) {
 				return [
 					i/24,
-					Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12))/2 //?
+					Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12))/(Math.PI/180)
 				]
 			}).map(function (coords) {
-				return [coords[0]*canvas.width-canvas.width/2, (1+coords[1])*canvas.height/2]
+				return [coords[0]*canvas.width-canvas.width/2, (90-coords[1])/90*canvas.height/2]
 			}),
 			lightmask = document.createElement('canvas'),
 			lctx = lightmask.getContext('2d');
