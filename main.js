@@ -75,15 +75,29 @@ document.addEventListener('DOMContentLoaded', function (){
 				var now = new Date(),
 				jan01 = new Date(now.getFullYear(), 0, 1),
 				dayOfYear = Math.ceil((now - jan01)/86400000);
-				return 23.433*Math.cos((dayOfYear+9)/365*2*Math.PI)*(Math.PI/180)
+				return 23.433*(Math.PI/180)*Math.cos((dayOfYear+9)/365*2*Math.PI)
 			})(),
-			curve = Array.init(73).map(function (nothing, i) {
+			curve = Array.init(73).map(function (nothing, i) { // generate
 				return [
 					i/24,
-					Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12))/(Math.PI/180)
+					(Math.PI/2-Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12)))/(Math.PI/2)
 				]
-			}).map(function (coords) {
-				return [coords[0]*canvas.width-canvas.width/2, (90-coords[1])/90*canvas.height/2]
+			}).map(function (coords) { // convert to canvas coordinates
+				return new Vector([
+					coords[0]*canvas.width-canvas.width/2,
+					coords[1]*canvas.height/2
+				])
+			}).map(function (c, i, curve) { // smoothen
+				// intersect edges ab and cd, use the result as controlpoint
+				var ab = curve[i%24+23].minus(curve[i%24+22]),
+				bc = curve[i%24+24].minus(curve[i%24+23]),
+				cd = curve[i%24+1].minus(curve[i%24]),
+				controlpoint = i && Math.abs(ab[0]*cd[1]-ab[1]*cd[0]) > 0.001
+					? curve[i-1].plus(ab.multiply( // Cramer's rule
+						(bc[0]*cd[1]-bc[1]*cd[0]) / (ab[0]*cd[1]-ab[1]*cd[0])
+					))
+					: c;
+				return controlpoint.toArray().concat(c.toArray());
 			}),
 			lightmask = document.createElement('canvas'),
 			lctx = lightmask.getContext('2d');
@@ -91,20 +105,31 @@ document.addEventListener('DOMContentLoaded', function (){
 			lightmask.height = canvas.height;
 			lctx.beginPath();
 			lctx.moveTo(0,0);
-			lctx.lineTo(0, curve[0][1]);
+			/*curve.forEach(function(coords) {
+				lctx.quadraticCurveTo.apply(lctx, coords);
+			});*/
 			curve.forEach(function(coords) {
-				lctx.lineTo(coords[0], coords[1]);
-				//lctx.quadraticCurveTo(?, ?, coords[0], coords[1]);
+				lctx.lineTo(coords[0],coords[1])
+				lctx.lineTo(coords[2],coords[3])
+			});
+			curve.forEach(function(coords) {
+				lctx.lineTo(coords[2],coords[3])
 			});
 			lctx.lineTo(lightmask.width, 0);
 			lctx.closePath();
+			lctx.fillStyle = 'rgb(0,0,255)';
+			lctx.lineWidth = 1;
 			lctx.fill();
+			lctx.strokeStyle = 'rgb(0,0,0)';
+			lctx.stroke();
 			
 			return function dawn(time) {
 				// meh, this shouldn't draw the mask every time
-				// TODO test if moving an image is more efficient
+				// but using position: absolute doesn't seem to be cheaper
+				// perhaps draw the canvas on itself with an offset?
+				// clever implementations could optimize for this
 				var offset = Math.floor(((3600-43200-time)%86400)/86400*canvas.width)
-				ctx.globalAlpha = 0.25;
+				ctx.globalAlpha = 0.5;
 				ctx.drawImage(lightmask, offset, 0);
 				ctx.globalAlpha = 1;
 			}
@@ -140,7 +165,7 @@ document.addEventListener('DOMContentLoaded', function (){
 			if (timer >= data.last)
 				timer = data.first;
 		}, data.conf.intervalMs).start();
-		when(document.getElementById('canvas-container'), 'click').then(togglePlaying).run();
+		whenever(document.getElementById('canvas-container'), 'click').then(togglePlaying).run();
 	})
 	.accumulate(2),
 
@@ -157,8 +182,9 @@ document.addEventListener('DOMContentLoaded', function (){
  * library functions
  * inspired by Arrowlets
  * http://www.cs.umd.edu/projects/PL/arrowlets/
- * here be dragons
+ * here be evil globals (this will be cleaned up some time)
  */
+// NOTE: memleaks?
 // asynchronous loading of content, starting a pipe
 function load(paths) {
 	function loadImage(path, callback) {
@@ -187,7 +213,7 @@ function load(paths) {
 		})
 	}})
 }
-function when(el, eventType, useCapture) {
+function whenever(el, eventType, useCapture) {
 	return ({ then: function (callback) {
 		return new Async(callback, function (callback) {
 			el.addEventListener(eventType, callback, useCapture || false);
@@ -195,6 +221,7 @@ function when(el, eventType, useCapture) {
 	}})
 }
 // asynchronous pipe
+// NOTE Async.prototype = new Function() -> Async()
 function Async(fun, hook) {
 	this.fun = fun;
 	this.hook = hook;
@@ -260,7 +287,7 @@ Function.prototype.curry = function () {
 }
 // Interval object, useful for pausing intervals
 // no error handling, no cleverness
-// the interval is passed as a parameter
+// the interval is passed as a parameter to f
 function Interval(f, tick) {
 	var interval,
 	running = false,
@@ -287,3 +314,52 @@ Array.init = function (l) {
 	}
 	return arr
 }
+Object.extend = function (destination, source) {
+	for (var property in source)
+		destination[property] = source[property];
+	return destination;
+}
+function Vector (coords) {
+	var self = this;
+	self.length = coords.length;
+	coords.forEach(function (val, i) {
+		self[i] = val;
+	})
+}
+Vector.prototype = Object.extend([], {
+	minus: function (b) {
+		return new Vector(this.map(function (ai, i) {
+			return ai - b[i]
+		}))
+	},
+	plus: function (b) {
+		return new Vector(this.map(function (ai, i) {
+			return ai + b[i]
+		}))
+	},
+	scalarLength: function () {
+		return Math.sqrt(this.reduce(function (x, y, i) {
+			return (i===1?x:1)*x + y*y
+		}))
+	},
+	multiply: function (l) {
+		return new Vector(this.map(function (x) {
+			return x * l
+		}))
+	},
+	normalize: function () {
+		return this.multiply(1/this.scalarLength())
+	},
+	scalarproduct: function (b) {
+		return this.reduce(function (sum, a, i) {
+			return (i===1?sum*b[0]:sum) + a*b[i]
+		})
+	},
+	angle: function (b) {
+		return Math.acos(this.scalarproduct(b)/(this.scalarLength()*b.scalarLength()))
+	},
+	toArray: function () {
+		return this.map(function (x) { return x })
+	},
+	toString: Object.prototype.toString
+});
