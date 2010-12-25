@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function (){
 	var debug = true,
 	debugdata = false,
-	log = function log(x) {
+	log = function (x) {
 		if (typeof console !== 'undefined' && debug)
 			console.log(x)
 	},
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function (){
 		document.getElementById('loadstatus-'+name).appendChild(document.createTextNode(" Done."));
 		return Array.prototype.slice.call(arguments, 1);
 	},
-	prepareCanvas = (function prepareCanvas(loadEvent) {
+	prepareCanvas = (function (loadEvent) {
 		var background = loadEvent[0][0].target;
 		canvas.width = background.width;
 		canvas.height = background.height;
@@ -63,85 +63,86 @@ document.addEventListener('DOMContentLoaded', function (){
 		timer = data.first,
 		lastFrame = data.last + data.conf.queueLength*data.conf.secondsPerInterval;
 		queue = [],
-		drawdot = function drawdot(coords) {
+		drawdot = function (coords) {
 			ctx.beginPath();
 			ctx.arc(Math.floor((180+coords.longitude)%360*width/360), Math.floor((90-coords.latitude)*height/180), data.conf.dotSize/2, 0, Math.PI*2, true); 
 			ctx.closePath();
 			ctx.fill();
 		},
 		dawn = (function () {
-			var tzOffset = +1, // GMT+1
-			epsilon = (function () { // ecliptic
+			// draw a daylight curve, not using brute force
+			// google said http://astrosail.de/de/static/tutorial/best5.php?cat=42
+			// current status: b0rken
+			var pi = Math.PI,
+			tanphi = Math.tan(pi/2 - (function () { // ecliptic (epsilon)
 				var now = new Date(),
 				jan01 = new Date(now.getFullYear(), 0, 1),
 				dayOfYear = Math.ceil((now - jan01)/86400000);
-				return 23.433*(Math.PI/180)*Math.cos((dayOfYear+9)/365*2*Math.PI)
-			})(),
-			curve = Array.init(73).map(function (nothing, i) { // generate
+				return 23.433*(pi/180)*Math.cos(2*pi*(dayOfYear+9)/365)
+			})()),
+			// calculate and interpolate 
+			// this is quite fragile numerically - I'd be so happy if it just worked...
+			// Should perhaps resort to splines
+			curve = Array.init(73).map(function (nothing, i) { // initial values
+				var rotation = i*pi/12;
 				return [
-					i/24,
-					(Math.PI/2-Math.atan(Math.tan(Math.PI/2-epsilon)*Math.cos(Math.PI*(i+tzOffset)/12)))/(Math.PI/2)
+					Math.atan(tanphi*Math.cos(rotation)), // value
+					(1/(1+Math.pow(tanphi*Math.cos(rotation),2))) * tanphi*(-Math.sin(rotation)) * (pi/12) // slope
 				]
-			}).map(function (coords) { // convert to canvas coordinates
-				return new Vector([
-					coords[0]*canvas.width-canvas.width/2,
-					coords[1]*canvas.height/2
-				])
-			}).map(function (c, i, curve) { // smoothen
-				// intersect edges ab and cd, use the result as controlpoint
-				var ab = curve[i%24+23].minus(curve[i%24+22]),
-				bc = curve[i%24+24].minus(curve[i%24+23]),
-				cd = curve[i%24+1].minus(curve[i%24]),
-				controlpoint = i && Math.abs(ab[0]*cd[1]-ab[1]*cd[0]) > 0.001
-					? curve[i-1].plus(ab.multiply( // Cramer's rule
-						(bc[0]*cd[1]-bc[1]*cd[0]) / (ab[0]*cd[1]-ab[1]*cd[0])
-					))
-					: c;
-				return controlpoint.toArray().concat(c.toArray());
-			}),
-			lightmask = document.createElement('canvas'),
+			}).map(function (values, i) { // convert to canvas coordinates
+				return [
+					new Vector([
+						i/24*canvas.width,
+						(1+values[0]/(pi/2))*canvas.height/2]),
+					new Vector([
+						1/24*canvas.width,
+						values[1]*canvas.height/2])
+				]
+
+			}).map(function (to, i, curve) { // build the arguments for quadraticCurveTo()
+				var from = curve[i-1];
+				return (i && Vector.intersectLines(
+					from[0].minus(from[1]), from[0], to[0], to[0].plus(to[1])
+				) || to[0]).toArray()
+				.concat(to[0].toArray());
+			});
+
+			var lightmask = document.createElement('canvas'),
 			lctx = lightmask.getContext('2d');
 			lightmask.width = 3*canvas.width;
 			lightmask.height = canvas.height;
-			lctx.beginPath();
-			lctx.moveTo(0,0);
-			/*curve.forEach(function(coords) {
-				lctx.quadraticCurveTo.apply(lctx, coords);
-			});*/
-			curve.forEach(function(coords) {
-				lctx.lineTo(coords[0],coords[1])
-				lctx.lineTo(coords[2],coords[3])
-			});
-			curve.forEach(function(coords) {
-				lctx.lineTo(coords[2],coords[3])
-			});
-			lctx.lineTo(lightmask.width, 0);
-			lctx.closePath();
-			lctx.fillStyle = 'rgb(0,0,255)';
-			lctx.lineWidth = 1;
-			lctx.fill();
 			lctx.strokeStyle = 'rgb(0,0,0)';
+			lctx.lineWidth = 1;
+			lctx.fillStyle = 'rgb(0,0,255)';
+			lctx.beginPath();
+				lctx.moveTo(0,0);
+				curve.forEach(function(coords) {
+					lctx.quadraticCurveTo.apply(lctx, coords);
+				});
+				lctx.lineTo(lightmask.width, 0);
+			lctx.closePath();
+			lctx.fill();
 			lctx.stroke();
 			
 			return function dawn(time) {
 				// meh, this shouldn't draw the mask every time
 				// but using position: absolute doesn't seem to be cheaper
-				// perhaps draw the canvas on itself with an offset?
-				// clever implementations could optimize for this
+				// perhaps draw the canvas on itself with an offset? Clever implementations could optimize for this
+				// also: scrollLeft?
 				var offset = Math.floor(((3600-43200-time)%86400)/86400*canvas.width)
 				ctx.globalAlpha = 0.5;
 				ctx.drawImage(lightmask, offset, 0);
 				ctx.globalAlpha = 1;
 			}
 		})(),
-		paint = function paint(queue) {
+		paint = function (queue) {
 			queue.forEach(function (dots, i) {
 				ctx.fillStyle = 'rgba(255,255,0,'+i/data.conf.queueLength+')';
 				if (dots !== null)
 					dots.forEach(drawdot);
 			});
 		},
-		togglePlaying = function togglePlaying() {
+		togglePlaying = function () {
 			if (control.running) {
 				ctx.save();
 				ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -149,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function (){
 				ctx.fillRect(width/2+20, height/2-100, 80, 200)
 				ctx.restore();
 			}
-			control.running ^= 1;
+			control.running = !control.running;
 			control.tick.toggle();
 		};
 		control.tick = new Interval(function () {
@@ -185,6 +186,7 @@ document.addEventListener('DOMContentLoaded', function (){
  * here be evil globals (this will be cleaned up some time)
  */
 // NOTE: memleaks?
+// hmm http://lambdor.net/?p=81
 // asynchronous loading of content, starting a pipe
 function load(paths) {
 	function loadImage(path, callback) {
@@ -363,3 +365,13 @@ Vector.prototype = Object.extend([], {
 	},
 	toString: Object.prototype.toString
 });
+Vector.intersectLines = function (a, b, c, d) {
+	var ab = b.minus(a),
+	bc = c.minus(b),
+	cd = d.minus(c);
+	// Cramer's rule
+	return Math.abs(ab[0]*cd[1]-ab[1]*cd[0]) > 0.001 &&
+		b.plus(ab.multiply(
+			(bc[0]*cd[1]-bc[1]*cd[0]) / (ab[0]*cd[1]-ab[1]*cd[0])
+		))
+}
