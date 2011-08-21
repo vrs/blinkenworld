@@ -171,10 +171,10 @@ document.addEventListener('DOMContentLoaded', function (){
 	.accumulate(2),
 
 	// go
-	echo = Function.constant;
-	echo(['img/worldmap.jpg']).then(loadingMsg.curry('images')).then(load).run()
+	take = Function.constant;
+	take(['img/worldmap.jpg']).then(loadingMsg.curry('images')).then(load).run()
 		.then(loadingDone.curry('images')).then(prepareCanvas).then(processPosts.curry(1)).run();
-	echo([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.curry('posts')).then(load).run()
+	take([debugdata ? 'postdata-sample.json' : 'data/posts.json']).then(loadingMsg.curry('posts')).then(load).run()
 		.then(loadingDone.curry('posts')).then(processPosts.curry(0)).run();
 	// then(reset)?
 }, false);
