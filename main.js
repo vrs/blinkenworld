@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function (){
 				var rotation = i*pi/12;
 				return [
 					Math.atan(tanphi*Math.cos(rotation)), // value
-					(1/(1+Math.pow(tanphi*Math.cos(rotation),2))) * tanphi*(-Math.sin(rotation)) * (pi/12) // slope
+					(1/(1+Math.pow(tanphi*Math.cos(rotation),2))) * tanphi*(-Math.sin(rotation)) * (pi/18) // slope
 				]
 			}).map(function (values, i) { // convert to canvas coordinates
 				return [
