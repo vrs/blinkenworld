@@ -111,9 +111,6 @@ document.addEventListener('DOMContentLoaded', function (){
 			lctx = lightmask.getContext('2d');
 			lightmask.width = 3*canvas.width;
 			lightmask.height = canvas.height;
-			lctx.strokeStyle = 'rgb(0,0,0)';
-			lctx.lineWidth = 1;
-			lctx.fillStyle = 'rgb(0,0,255)';
 			lctx.beginPath();
 				lctx.moveTo(0,0);
 				curve.forEach(function(coords) {
@@ -122,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function (){
 				lctx.lineTo(lightmask.width, 0);
 			lctx.closePath();
 			lctx.fill();
-			lctx.stroke();
 			
 			return function dawn(time) {
 				// meh, this shouldn't draw the mask every time
